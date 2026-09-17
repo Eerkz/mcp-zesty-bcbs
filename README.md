@@ -130,7 +130,10 @@ Add the following object to the `mcpServers` block:
 - **verify-session** – Verify if session token is valid
 
 ### Instances
-- **get-audit-logs** – Get all Audit trails of a given instance
+
+Tools marked **(write)** modify instance content. Everything else is read-only.
+
+- **get-audit-logs** – Gets the audit trail of an instance, paging through every record. Accepts an optional raw query string to filter server-side
 - **get-audit-log** – Get a specific audit trail by audit ZUID
 - **get-fields** – Get all fields of a content model
 - **get-field** – Get a specific field of a content model
@@ -142,12 +145,14 @@ Add the following object to the `mcpServers` block:
 - **get-item-publishing** – Retrieve an item publishing record of a given item
 - **get-item-versions** – Retrieves all item versions of a given item
 - **get-item-version** – Retrieves specific item version of a given item
-- **get-items** – Returns the most recently edited item, by latest version and date created, on a collection content object
+- **get-items** – Returns all content items belonging to a content model, for a given language. Can be limited to published items only
 - **get-item** – Returns a single content item object
 - **search-content-item** - Allows searching for contents by either ZUID, meta text values or path-related values
 - **get-labels** – Retrieves Labels
 - **get-label** – Retrieves specific Label
 - **get-langs** – Returns the non-deleted languages available for this instance
+- **add-lang** **(write)** – Adds a language to the instance, optionally activating it in the same call
+- **update-lang** **(write)** – Activates, deactivates, or undeletes an existing language
 - **get-links** – Retrieves all link created within an instance
 - **get-link** – Retrieves a specific link
 - **get-models** – Retrieves all models
@@ -160,6 +165,8 @@ Add the following object to the `mcpServers` block:
 - **get-stylesheet-variable** – Retrieves specific stylesheet variable
 - **get-stylesheets** – Retrieves all stylesheets
 - **get-stylesheet** – Retrieves specific stylesheet
+- **get-translation-batch** – Collects source-language content items paired with their target-language siblings, returning only the fields that hold translatable prose
+- **apply-translations** **(write)** – Writes translated content back onto the target-language items
 - **get-web-headers** – Returns all legacy headers
 
 ### Media
@@ -169,3 +176,18 @@ Add the following object to the `mcpServers` block:
 - **get-group** – Return a group
 - **get-files** – Return files of a bin
 - **get-file** – Return a file
+
+## Translating an instance
+
+The language and translation tools are designed to be used together:
+
+1. **`add-lang`** creates the locale. This replicates every content item from the default language into the new language, with each copy holding the default-language text until it is translated. Languages are created inactive so content can be staged before the locale is reachable on the live site — pass `ACTIVATE` to activate immediately instead.
+2. **`get-translation-batch`** returns the source items paired with their new siblings, reduced to just the fields holding prose. Nothing is written. The AI client translates the returned strings.
+3. **`apply-translations`** writes them back. Start with `DRY_RUN` to inspect the payloads before a bulk run.
+
+Notes:
+
+- Translations are written as **drafts**, not published versions. `get-item` returns the published version, so it will not show them — use `get-item-versions` to confirm a write landed, or `get-items` with the target `LANG` to read the drafts back.
+- `pathPart` is never translated, since rewriting it would change live URLs.
+- `apply-translations` refuses to write to an item whose language does not match the target, which prevents overwriting the source-language master.
+- SEO meta fields have API length limits, and translated text usually runs longer than the English source. `get-translation-batch` reports the limits; `apply-translations` rejects overflows before sending the write.
