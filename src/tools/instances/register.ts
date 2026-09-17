@@ -14,6 +14,7 @@ import { registerRedirectsTools } from './redirects/register.js';
 import { registerSettingsTools } from './settings/register.js';
 import { registerStylesheetVariablesTools } from './stylesheet-variables/register.js';
 import { registerStylesheetsTools } from './stylesheets/register.js';
+import { registerTranslationsTools } from './translations/register.js';
 import { registerWebHeadersTools } from './web-headers/register.js';
 
 export function registerInstancesTools(server: McpServer, sdk: any) {
@@ -32,5 +33,6 @@ export function registerInstancesTools(server: McpServer, sdk: any) {
     registerSettingsTools(server, sdk);
     registerStylesheetVariablesTools(server, sdk);
     registerStylesheetsTools(server, sdk);
+    registerTranslationsTools(server, sdk);
     registerWebHeadersTools(server, sdk);
 }
